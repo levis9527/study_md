@@ -45,3 +45,5 @@
 17. shiro中`subject`是线程绑定的，多线程下面需要传播到相应线程可以调用`subject.execute(Runnable)`来实现.
 
 18. Shiro-1.2.2内置的`FilterChain`，常用的有`anon`，`authc`，`logout`，`perms`，`roles`，`user`，`authcBasic`，`noSession`，`port`，`rest`，`ssl`，值得注意的是，`authc`和`user`的区别，`authc`表示必须通过验证，但是`user`可以是`rememberMe`后直接从`cookie`里面拿用户名字来访问，`user`控制更加松散，是和大部分权限要求不严格的场合，如新闻列表的查询等状态，`user`可以获取到用户name，可以执行很多操作。
+
+19. 可以自己配置`PathMatchingFilter`来指定路由方式，按照自己的逻辑去处理权限，这样`doGetAuthorizationInfo`其实就可以不用了，因为没有了执行时机，如果采用ini配置文件配置，方法是先声明`[filters]`，然后在`[urls]`里通过类似`/**=myFilter[xx]`调用过滤器。
