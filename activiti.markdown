@@ -34,5 +34,7 @@
 >  * `RuntimeService`运行时服务，主要用来启动流程实例，另外提供部分获取运行时状态变量的api
 >  * `TaskService`任务服务，提供访问任务task的服务，算是最核心的服务之一了，比如执行任务，分配任务等操作
 
-8. 表单引擎
+8. 挂起流程定义以及挂起流程实例，方法为`RepositoryService.suspendProcessDefinitionXXX`以及`suspendProcessInstanceXXX`，重新激活定义以及实例为`activateProcessDefinitionXXX`以及`activateProcessInstanceXXX`，`XXProcessInstanceXX`方法里参数为`ProcessInstanceId`，这个很重要，前往别搞错，不然找不到该流程实例。
+
+9. 运行时提交任务的`taskVariables`可以通过`runtimeService.setVariables`设置，参数为`task.getExecutionId()`
 
