@@ -1,0 +1,9 @@
+﻿Eureka
+Eureka Client：负责将这个服务的信息注册到Eureka Server中
+Eureka Server：注册中心，里面有一个注册表，保存了各个服务所在的机器和端口号
+！！所有的需要注册或者调用的服务器都必须内嵌一个eureka client
+
+
+springboot中Actuator不显示更多信息
+需要关闭management.security.enabled = false，开发时使用，生产阶段必须设置权限保证安全
+info接口的信息展示可以直接在yml里添加类似json的参数，默认用@包裹参数

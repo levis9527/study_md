@@ -1,0 +1,35 @@
+/**
+ * 牛顿分割法求数字平方根
+ */
+function sqrt(a , x){
+	var differ = x * x - a;
+	if((differ > 0?differ:differ*-1) < 0.000000000001){
+		return x;
+    }
+	x = (x + (a/x)) / 2;
+	return sqrt(a, x);
+}
+
+/**
+ * 二分法求数字平方根
+ */
+function sqrt(x) {
+	var start = 0, end = x;
+	var jindu = end - start;
+	var ans = 0;
+	while(jindu > 0.00000001){
+		var mid = (start + end)/2;
+		if(mid * mid == x){
+			return mid;
+        }
+		if(mid * mid > x){
+			end = mid;
+        }
+		if(mid * mid < x){
+			start = mid;
+        }
+		jindu = end - start;
+		ans = mid;
+    }
+	return ans;
+}

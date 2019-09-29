@@ -1,0 +1,7 @@
+Jupyter修改工作路径
+使用jupyter notebook --generate-config查找配置文件路径
+然后修改配置文件里面的c.NotebookApp.notebook_dir属性为要存放代码的路径
+
+
+python里面，if None和if not None的区别
+如果字符串为空''，if ""为false，而if "" is not None为true

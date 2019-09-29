@@ -1,0 +1,24 @@
+TSC 条码打印机 java注意事项：
+1, jre必须是32位，不然可能无法加载ddl以及lib
+2, TscLibDll.INSTANCE.openport(String pirnterName), pirnterName必须和电脑添加的打印机名字一致，不然会出现Printer Driver is not been specified
+3, 只能打印单色位图bmp（可能某些型号只能打印单色，必须注意！！！）
+
+
+css进度条
+body::after {
+    content: "";
+    position: fixed;
+    top: 5px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #eee;
+    z-index: -1;
+}
+body {
+    /* background-color: #f50; */
+    background-image: linear-gradient(to right top, #d02626 50%, #fff 50%);
+    background-size: 100% calc(100% - 100vh + 5px);
+    background-repeat: no-repeat;
+}
+

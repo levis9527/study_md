@@ -1,0 +1,30 @@
+﻿LPAD和RPAD左右填充的函数
+SELECT LPAD(min(mobile), 6, '0') from card_user                                	
+LPAD(min(字段), 位数, '0')
+
+生成日期字符串加上手机号的id
+DATE_FORMAT格式化日期
+select concat(DATE_FORMAT(now(),'%y%m%d'),  min(mobile)) m from card_user      	
+
+获取当前时间戳
+unix_timestamp() 	
+时间戳转换成时间格式							
+FROM_UNIXTIME(ao.order_time, '%Y-%m-%d %H:%i:%S')	
+设置自增id起始值				
+alter table users AUTO_INCREMENT=123456;					
+
+【强制】当某一列的值全是 NULL 时，count(col)的返回结果为 0，但 sum(col)的返回结果为
+NULL，因此使用 sum()时需注意 NPE 问题。
+正例：可以使用如下方式来避免 sum 的 NPE 问题：SELECT IF(ISNULL(SUM(g)),0,SUM(g)) FROM table;
+最好对于某些计算的列，尽量做到非空，大部分为空的值做sum没太大意义
+
+
+查询数据库重复问题
+select username,count(*) as count from hk_test group by username having count>1;  
+
+查询是否有绑定多个设备的人
+select count(member_id) as count, member_id from bs_device_bind group by member_id having count > 1
+
+
+计算年龄
+select TIMESTAMPDIFF(year, birthday, now()) from table_name

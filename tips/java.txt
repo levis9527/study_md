@@ -1,0 +1,18 @@
+把文件打包成war包  jar -cvf  name.war *
+
+
+idea导入多module项目时，可以把.idea文件夹删掉，然后点击maven project把相关项目的pom.xml添加进去
+
+
+正则表达式
+(?:)其中?:表示该括号内是非获取匹配，部分情况下需要使用 | 但是不需要获取匹配信息，就使用这个
+.表示任意字符
+
+
+java spi机制
+个人理解是把相关接口实现类暴露给外部，约定外部从这里获取并实例化接口的实现
+例如jdbc数据库驱动，有个java.sql.Driver文件，里面放Driver的实现com.mysql.jdbc.Driver
+会让编码更加简单，方便不同服务之间解耦
+以前jdbc需要Class.forName加载类触发里面静态方法来实例化Driver，现在可以让实现jdbc接口的驱动直接放个spi文件，调用方可以直接知道你的类名而且实例化更方便
+spi文件放在META-INF/services目录，文件名放接口名字，调用方通过该接口获取，文件内容为实现类
+通过ServiceLoader.load(IShout.class)获取实例集合

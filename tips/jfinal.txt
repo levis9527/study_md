@@ -1,0 +1,1 @@
+String str = Engine.use().getTemplateByString("#(key)----->#(value)").renderToString(map);随时使用模板引擎
