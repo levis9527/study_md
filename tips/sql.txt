@@ -28,3 +28,7 @@ select count(member_id) as count, member_id from bs_device_bind group by member_
 
 计算年龄
 select TIMESTAMPDIFF(year, birthday, now()) from table_name
+
+
+union和union all
+union all不会去重，确定数据没重复或者允许重复使用union all效率会高很多
