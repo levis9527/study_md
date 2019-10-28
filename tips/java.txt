@@ -16,3 +16,9 @@ java spi机制
 以前jdbc需要Class.forName加载类触发里面静态方法来实例化Driver，现在可以让实现jdbc接口的驱动直接放个spi文件，调用方可以直接知道你的类名而且实例化更方便
 spi文件放在META-INF/services目录，文件名放接口名字，调用方通过该接口获取，文件内容为实现类
 通过ServiceLoader.load(IShout.class)获取实例集合
+
+
+java MBean
+可以把bean注册到MBean工厂，
+创建一个接口命名为*MBean，然后创建实现类，命名为*（去掉MBean），然后就可以在jconsole等工具里找到MBean了
+MBean有个规则，标准MBean名称必需是在要监控的类名后面加上“MBean”, 且要监控的类和MBean接口必需在同一包下

@@ -32,3 +32,13 @@ select TIMESTAMPDIFF(year, birthday, now()) from table_name
 
 union和union all
 union all不会去重，确定数据没重复或者允许重复使用union all效率会高很多
+
+
+事务级别
+Read uncommitted (读未提交)最低级别
+Read committed (读已提交)避免脏读
+Repeatable Read（可重复读）避免藏独和不可重复读
+Serializable （串行化）最高级别，不使用并发
+脏读-->读取到了其他事务未提交的数据
+不可重复读-->一个事务时间比较长，不同时间读取的数据行结果不一样（同一条数据前后不一样）
+幻读-->不同时间读取到的数据数量不一样（同一个表，前后数据量不一样）
