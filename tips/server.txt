@@ -37,6 +37,9 @@ docker run常用参数
 3.可以通过--volumes-from 容器名 挂载容器中数据，可以用来让容器共享数据
 4.docker不会在容器被删除后自动删除数据卷，可以通过docker volume ls 查看所有数据卷
 
+出现意外win7没法连接上容器的docker
+使用docker-machine env default显示命令，然后copy显示的命令在cmd中粘贴，一般是网卡等问题，要重新设置环境变量
+
 
 
 对于ssh免密登录，可以把配置写在./ssh/config中，可以简化部分操作，格式如下
