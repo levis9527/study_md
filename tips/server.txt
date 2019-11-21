@@ -13,6 +13,7 @@ proxy_cookie_path /two/ /
 
 
 docker启动镜像时有个restart参数，可以设置为always保证stop容器后马上重启一个新的容器，对于需要保证可靠性的系统很重要，类似于开机重启重启
+要删除restart=always的容器，使用docker update –restart = no< container_id>修改restart参数后再删除
 docker ps -a列出所有的容器列表，docker images列出镜像列表，想学习docker必须完全理解镜像与容器的关系以及区别，很多人会搞混，在hub拉取的
 是镜像，通过docker images查看，然后通过docker run创建一个容器并且启动，创建后可以通过docker ps 查看，如果停止后可以通过docker ps -a查看
 状态并且通过docker start重新启动，不需要再根据镜像创建并启动
@@ -67,3 +68,8 @@ linux useradd命令
 -s shell指定用户的默认shell
 -u uid指定唯一的uid
 删除用户使用-r可以删除home目录以及mail目录，但是必须特别小最新使用
+
+
+关于sshkey
+ssh-keygen  -y -f id_rsa > id_rsa.pub
+可以通过私钥导出公钥，私钥公钥其实是对等的，但是现实中一般私钥文件是包含公钥的

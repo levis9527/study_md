@@ -22,3 +22,13 @@ java MBean
 可以把bean注册到MBean工厂，
 创建一个接口命名为*MBean，然后创建实现类，命名为*（去掉MBean），然后就可以在jconsole等工具里找到MBean了
 MBean有个规则，标准MBean名称必需是在要监控的类名后面加上“MBean”, 且要监控的类和MBean接口必需在同一包下
+
+
+windows下手动编译整个项目
+dir /s /b *.java > sources.txt         把该目录下所有.java文件写入到文件sources.txt
+javac -d build @sources.txt            根据sources.txt里的文件名编译所有.java文件，
+javac -d build -cp lib @sources.txt    编译时也可以使用-classpath指定classpath路径
+java -classpath build com.A            运行要启动的类
+java -classpath "./cp1;./cp2"          window使用;分隔，linux使用:分隔
+jar -cvf jarName.jar build             把整个项目打包成jar
+jar -cvf aa.jar -C build ./            去掉打包后的文件夹，保证打包后package是在root目录，也可以在build目录下打包，那么就不需要-C参数了

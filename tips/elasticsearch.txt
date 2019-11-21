@@ -1,0 +1,211 @@
+掌握elasticsearch各种查询
+
+1.查询（搜索所有字段中存在a的记录）
+GET /index/_doc/_search?q=a
+{
+    "query": {
+        // 只有multi_match有搜索多条件的功能，match没有
+        "multi_match" : {
+            "query" : "a", // 查询条件
+            // 在这些字段里面查询，新版有个copy_to，可以在创建mapping时用来聚合字段为一个新的字段
+            "fields" : ["title", "authors", "summary", "publish_date", "num_reviews", "publisher^3"] 
+            // 可以使用^3提高字段的相关性，会使查询结果分数增加靠前，比如title^3会让title匹配到的得到更多的分数
+        },
+        // 通配符查询
+        "wildcard":{
+        	"field":"wildc?ard*" // 通配符查询
+        },
+        // 正则表达式查询
+        "regexp":{
+        	"field":"regexp" // 正则表达式查询
+        },
+        // 前缀查询
+        "prefix":{
+        	"field":"prefix" //前缀查询，可以使用其他的查询代替
+        },
+        // 匹配短语查询
+        "multi_match" : {
+            "query": "search engine", // 查询条件
+            "fields": ["title", "summary"],
+            "type": "phrase", // 表示是匹配短语查询
+            "slop": 3 // 表示允许的术语相隔多远，如果离得太远会不包含在查询结果内，离得远近会影响查询结果评分
+        },
+        // 匹配短语前缀查询（不需要指定fields，summary参数表示整合所有属性）
+        "match_phrase_prefix" : {
+            "summary": {
+                "query": "search en", // 查询条件
+                "slop": 3, // 和匹配短语查询一样，指定属于相隔多远，影响评分，超出不显示
+                "max_expansions": 10
+            }
+        },
+        // 请求参数查询，multi_match的建议版本，可以使用AND OR + -等符号简化查询
+        "query_string" : {
+            "query": "(saerch~1 algorithm~1) AND (grant ingersoll)  OR (tom morton)",
+            "fields": ["title", "authors" , "summary^2"]
+        },
+        // 简单字符串查询，和query_string的区别在于不会解析query里面的AND OR等关键字
+        "simple_query_string" : {
+            "query": "(saerch~1 algorithm~1) + (grant ingersoll)  | (tom morton)",
+            "fields": ["title", "authors" , "summary^2"]
+        },
+        // 术语查询，完整匹配，分好词后必须拥有才能匹配上
+        "term" : {
+            "publisher": "manning"
+        },
+        // 需要多个查询条件传入数组需要改为terms
+        "terms" : {
+            "publisher": ["oreilly", "packt"]
+        },
+        // 范围查询（主要用于查询日期和数字，字符串范围没太大意义）
+        "range" : { // 表示是范围查询
+            "publish_date": { // 需要范围查询的属性
+                "gte": "2015-01-01", // gte表示大于
+                "lte": "2015-12-31"  // lte表示小于
+            }
+        },
+        // 过滤查询
+        "filtered": {
+            "query" : {
+                "multi_match": {
+                    "query": "elasticsearch",
+                    "fields": ["title","summary"]
+                }
+            },
+            // 普通过滤查询
+            "filter": {
+                "range" : { // 指定过滤条件
+                    "num_reviews": {
+                        "gte": 20
+                    }
+                }
+            },
+            // 过滤查询嵌套bool语句查询
+            "filter": {
+                "bool": { // bool嵌套
+                    "must": { // 必须包含
+                        "range" : { "num_reviews": { "gte": 20 } }
+                    },
+                    "must_not": { // 必须不包含
+                        "range" : { "publish_date": { "lte": "2014-12-31" } }
+                    },
+                    "should": { // 最好包含
+                        "term": { "publisher": "oreilly" }
+                    }
+                }
+            }
+        },
+        // 功能评分，在不指定查询条件的情况下影响查询分数，
+        // 如果只按照这个字段排序会让相关性不显示在分数上，指定评分是最好的选择
+        "function_score": {
+            "query": {
+                "multi_match" : {
+                    "query" : "search engine",
+                    "fields": ["title", "summary"]
+                }
+            },
+            "field_value_factor": { // 指定评分因子
+                "field" : "num_reviews", // 指定评分字段
+                "modifier": "log1p", // 指定评分函数
+                "factor" : 2 // 指定分数对整体分数的影响
+            }
+        },
+        // 功能评分（衰变函数），适用于价格日期或者经纬度的查询
+        "function_score": {
+            "query": { // 指定搜索条件，前置搜索条件
+                "multi_match" : {
+                    "query" : "search engine", // 查询词
+                    "fields": ["title", "summary"] // 查询属性
+                }
+            },
+            "functions": [ // 多个函数，可以指定多个函数
+                {
+                    "exp": { // 有3个内置函数exp，linear，gauss，区别在于衰减形状不同
+                        "publish_date" : { // 要评分的属性
+                            "origin": "2014-06-15", // 目标起源位置，越靠近分数越高
+                            "offset": "7d", // 偏移量
+                            "scale" : "30d" // 范围
+                        }
+                    },
+                    "weight":2 //指定该衰减函数的权重
+                },
+                { // 这里表示常用的地理位置查询，地址一般使用gauss函数
+		            "gauss": { 
+		                "location": { 
+		                    "origin": { "lat": 51.5, "lon": 0.12 },
+		                    "offset": "2km", // 在2km范围内，所有评分都一样是1
+		                    "scale":  "3km" // 在5km时，评分为的decay值，默认decay为0.5
+		                    "decay":0.5 // scale指定位置的评分，默认为0.5
+		                }
+		            }
+		        },
+		        { // 使用自定义函数
+                    "script_score": { // script表示使用自定义函数
+                        "params" : { // 函数参数
+                            "threshold": "2015-07-30"
+                        },
+                        // 函数内容，函数不能使用换行符，用分号分割
+                        "script": "publish_date = doc['publish_date'].value; num_reviews = doc['num_reviews'].value; if (publish_date > Date.parse('yyyy-MM-dd', threshold).getTime()) { return log(2.5 + num_reviews) }; return log(1 + num_reviews);"
+                    }
+                // 要使用动态脚本，
+                // 必须在config/elasticsearch.yaml 文件中为Elasticsearch实例启用它
+                }
+            ],
+            // 得出的分数怎么处理，有多个可选参数
+            // multiply，sum，min，max，replace
+            "boost_mode" : "replace",
+            // max_boost只对函数结果限制，不对查询结果的分数限制
+            "max_boost":1.5 //默认1.5，限制函数能达到的最大分数，对查询分数最大能有多大的影响
+        }
+    },
+    "size":100, // 查询全部时可以使用maxInteger
+    "from":0, // 默认为0，便宜量，类似mysql中的limit
+    "_source":["field1", "field2"], // 查询哪些属性，未指定的属性不显示在查询结果_source里
+    "highlight":{ // 突出显示属性匹配的数据，用来显示查询结果，给em设置一个样式显示来高亮显示
+    	"fields":{
+    		"f1":{},
+    		"f2":{}
+    	}
+    },
+    // 排序方式
+    "sort": [
+    	// 可以整合多个排序条件
+        { "publish_date": {"order":"desc"}}
+    ]
+}
+
+2.bool查询（各种组合嵌套进bool标签来完成不同的查询需求）
+POST /bookdb_index/book/_search
+{
+  "query": {
+    "bool": {
+      // bool接收3个参数，must表示必须条件，must_not表示去除条件，一定不能包含，should表示or，并不强制性匹配，只会增加分数
+      // bool里面如果没有must，那么就必要要有一个should，有must的话，should就不是必须的
+      "must": {
+        "bool" : { 
+          // should多个条件，多个or条件
+          "should": [
+            { "match": { "title": "Elasticsearch" }},
+            { "match": { "title": "Solr" }} 
+          ],
+          // match字段必须传入一个对象，为字段名和匹配的确切数据，要查询所有可以使用match_all:{}
+          "must": { "match": { "authors": "clinton gormely" }} 
+        }
+      },
+      // must_not，文档里面必须不包含authors为radu gheorge记录
+      "must_not": { "match": {"authors": "radu gheorge" }}
+    }
+  }
+}
+
+3.模糊查询（模糊查询匹配信息）
+POST /bookdb_index/book/_search
+{
+    "query": {
+        "multi_match" : {
+            "query" : "comprihensiv guide",
+            "fields": ["title", "summary"], // 查询这些字段
+            "fuzziness": "AUTO" // 指定模糊查询，可以指定查找匹配的最大编辑数量，但是一般使用AUTO会比较好
+        }
+    },
+    "_source": ["title", "summary", "publish_date"]
+}
