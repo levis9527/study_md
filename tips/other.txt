@@ -1,10 +1,10 @@
-TSC ÌõÂë´òÓ¡»ú java×¢ÒâÊÂÏî£º
-1, jre±ØĞëÊÇ32Î»£¬²»È»¿ÉÄÜÎŞ·¨¼ÓÔØddlÒÔ¼°lib
-2, TscLibDll.INSTANCE.openport(String pirnterName), pirnterName±ØĞëºÍµçÄÔÌí¼ÓµÄ´òÓ¡»úÃû×ÖÒ»ÖÂ£¬²»È»»á³öÏÖPrinter Driver is not been specified
-3, Ö»ÄÜ´òÓ¡µ¥É«Î»Í¼bmp£¨¿ÉÄÜÄ³Ğ©ĞÍºÅÖ»ÄÜ´òÓ¡µ¥É«£¬±ØĞë×¢Òâ£¡£¡£¡£©
+ï»¿TSC æ¡ç æ‰“å°æœº javaæ³¨æ„äº‹é¡¹ï¼š
+1, jreå¿…é¡»æ˜¯32ä½ï¼Œä¸ç„¶å¯èƒ½æ— æ³•åŠ è½½ddlä»¥åŠlib
+2, TscLibDll.INSTANCE.openport(String pirnterName), pirnterNameå¿…é¡»å’Œç”µè„‘æ·»åŠ çš„æ‰“å°æœºåå­—ä¸€è‡´ï¼Œä¸ç„¶ä¼šå‡ºç°Printer Driver is not been specified
+3, åªèƒ½æ‰“å°å•è‰²ä½å›¾bmpï¼ˆå¯èƒ½æŸäº›å‹å·åªèƒ½æ‰“å°å•è‰²ï¼Œå¿…é¡»æ³¨æ„ï¼ï¼ï¼ï¼‰
 
 
-css½ø¶ÈÌõ
+cssè¿›åº¦æ¡
 body::after {
     content: "";
     position: fixed;

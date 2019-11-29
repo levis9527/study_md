@@ -1,4 +1,4 @@
-掌握elasticsearch各种查询
+﻿掌握elasticsearch各种查询
 
 1.查询（搜索所有字段中存在a的记录）
 GET /index/_doc/_search?q=a

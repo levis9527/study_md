@@ -1,44 +1,44 @@
-LPAD��RPAD�������ĺ���
+﻿LPAD和RPAD左右填充的函数
 SELECT LPAD(min(mobile), 6, '0') from card_user                                	
-LPAD(min(�ֶ�), λ��, '0')
+LPAD(min(字段), 位数, '0')
 
-���������ַ��������ֻ��ŵ�id
-DATE_FORMAT��ʽ������
+生成日期字符串加上手机号的id
+DATE_FORMAT格式化日期
 select concat(DATE_FORMAT(now(),'%y%m%d'),  min(mobile)) m from card_user      	
 
-��ȡ��ǰʱ���
+获取当前时间戳
 unix_timestamp() 	
-ʱ���ת����ʱ���ʽ							
+时间戳转换成时间格式							
 FROM_UNIXTIME(ao.order_time, '%Y-%m-%d %H:%i:%S')	
-��������id��ʼֵ				
+设置自增id起始值				
 alter table users AUTO_INCREMENT=123456;					
 
-��ǿ�ơ���ĳһ�е�ֵȫ�� NULL ʱ��count(col)�ķ��ؽ��Ϊ 0���� sum(col)�ķ��ؽ��Ϊ
-NULL�����ʹ�� sum()ʱ��ע�� NPE ���⡣
-����������ʹ�����·�ʽ������ sum �� NPE ���⣺SELECT IF(ISNULL(SUM(g)),0,SUM(g)) FROM table;
-��ö���ĳЩ������У����������ǿգ��󲿷�Ϊ�յ�ֵ��sumû̫������
+【强制】当某一列的值全是 NULL 时，count(col)的返回结果为 0，但 sum(col)的返回结果为
+NULL，因此使用 sum()时需注意 NPE 问题。
+正例：可以使用如下方式来避免 sum 的 NPE 问题：SELECT IF(ISNULL(SUM(g)),0,SUM(g)) FROM table;
+最好对于某些计算的列，尽量做到非空，大部分为空的值做sum没太大意义
 
 
-��ѯ���ݿ��ظ�����
+查询数据库重复问题
 select username,count(*) as count from hk_test group by username having count>1;  
 
-��ѯ�Ƿ��а󶨶���豸����
+查询是否有绑定多个设备的人
 select count(member_id) as count, member_id from bs_device_bind group by member_id having count > 1
 
 
-��������
+计算年龄
 select TIMESTAMPDIFF(year, birthday, now()) from table_name
 
 
-union��union all
-union all����ȥ�أ�ȷ������û�ظ����������ظ�ʹ��union allЧ�ʻ�ߺܶ�
+union和union all
+union all不会去重，确定数据没重复或者允许重复使用union all效率会高很多
 
 
-���񼶱�
-Read uncommitted (��δ�ύ)��ͼ���
-Read committed (�����ύ)�������
-Repeatable Read�����ظ���������ض��Ͳ����ظ���
-Serializable �����л�����߼��𣬲�ʹ�ò���
-���-->��ȡ������������δ�ύ������
-�����ظ���-->һ������ʱ��Ƚϳ�����ͬʱ���ȡ�������н����һ����ͬһ������ǰ��һ����
-�ö�-->��ͬʱ���ȡ��������������һ����ͬһ������ǰ����������һ����
+事务级别
+Read uncommitted (读未提交)最低级别
+Read committed (读已提交)避免脏读
+Repeatable Read（可重复读）避免藏独和不可重复读
+Serializable （串行化）最高级别，不使用并发
+脏读-->读取到了其他事务未提交的数据
+不可重复读-->一个事务时间比较长，不同时间读取的数据行结果不一样（同一条数据前后不一样）
+幻读-->不同时间读取到的数据数量不一样（同一个表，前后数据量不一样）

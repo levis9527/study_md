@@ -1,4 +1,4 @@
-�������� Hoare partition scheme
+﻿快速排序 Hoare partition scheme
 algorithm quicksort(A, lo, hi) is
     if lo < hi then
         p := partition(A, lo, hi)   // 
@@ -6,19 +6,19 @@ algorithm quicksort(A, lo, hi) is
         quicksort(A, p + 1, hi)
 
 algorithm partition(A, lo, hi) is
-    pivot := A[(lo + hi) / 2]       // ȡ�м�ֵ��Ϊ��׼
-    i := lo - 1                     // ȡͷ��ָ��
-    j := hi + 1                     // ȡβ��ָ��
-    loop forever                    // ��ѭ��
+    pivot := A[(lo + hi) / 2]       // 取中间值做为标准
+    i := lo - 1                     // 取头部指针
+    j := hi + 1                     // 取尾部指针
+    loop forever                    // 死循环
         do
-            i := i + 1              // �ҳ���ߴ��ڱ�׼��ֵ���±�
+            i := i + 1              // 找出左边大于标准的值的下标
         while A[i] < pivot
 
         do
-            j := j - 1               // �ҳ��ұ�С�ڱ�׼��ֵ���±�
+            j := j - 1               // 找出右边小于标准的值的下标
         while A[j] > pivot
 
-        if i >= j then               // ��������±���ײ�����������ұ��Ǹ��±꣬��߿���֮ǰѭ���Ѿ��������ұ�
-            return j                 // ����±�������м��Ǹ����ҷָ�������±�
+        if i >= j then               // 如果左右下标碰撞超过，返回右边那个下标，左边可能之前循环已经超过了右边
+            return j                 // 这个下标就是最中间那个左右分割的数据下标
 
-        swap A[i] with A[j]          // �������Ҳ��Ϲ�ص�����
+        swap A[i] with A[j]          // 交换左右不合规矩的数据

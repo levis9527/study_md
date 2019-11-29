@@ -1,7 +1,7 @@
-JupyterĞŞ¸Ä¹¤×÷Â·¾¶
-Ê¹ÓÃjupyter notebook --generate-config²éÕÒÅäÖÃÎÄ¼şÂ·¾¶
-È»ºóĞŞ¸ÄÅäÖÃÎÄ¼şÀïÃæµÄc.NotebookApp.notebook_dirÊôĞÔÎªÒª´æ·Å´úÂëµÄÂ·¾¶
+ï»¿Jupyterä¿®æ”¹å·¥ä½œè·¯å¾„
+ä½¿ç”¨jupyter notebook --generate-configæŸ¥æ‰¾é…ç½®æ–‡ä»¶è·¯å¾„
+ç„¶åä¿®æ”¹é…ç½®æ–‡ä»¶é‡Œé¢çš„c.NotebookApp.notebook_dirå±æ€§ä¸ºè¦å­˜æ”¾ä»£ç çš„è·¯å¾„
 
 
-pythonÀïÃæ£¬if NoneºÍif not NoneµÄÇø±ğ
-Èç¹û×Ö·û´®Îª¿Õ''£¬if ""Îªfalse£¬¶øif "" is not NoneÎªtrue
+pythoné‡Œé¢ï¼Œif Noneå’Œif not Noneçš„åŒºåˆ«
+å¦‚æœå­—ç¬¦ä¸²ä¸ºç©º''ï¼Œif ""ä¸ºfalseï¼Œè€Œif "" is not Noneä¸ºtrue
