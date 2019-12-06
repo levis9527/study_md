@@ -32,3 +32,7 @@ java -classpath build com.A            运行要启动的类
 java -classpath "./cp1;./cp2"          window使用;分隔，linux使用:分隔
 jar -cvf jarName.jar build             把整个项目打包成jar
 jar -cvf aa.jar -C build ./            去掉打包后的文件夹，保证打包后package是在root目录，也可以在build目录下打包，那么就不需要-C参数了
+
+
+eclipse导出项目乱码
+添加-encoding UTF-8 -charset UTF-8参数，修改字符编码为utf-8

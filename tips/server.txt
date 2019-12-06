@@ -77,3 +77,9 @@ ssh-keygen  -y -f id_rsa > id_rsa.pub
 
 查看服务器内存cpu使用情况
 ps aux –sort -rss
+
+
+windows查看端口占用
+netstat -ano|findstr str
+windows查看pid对应的服务
+tasklist|findstr str
