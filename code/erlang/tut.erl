@@ -55,17 +55,25 @@ append(L)   ->
 
 % the try catch userd, like java, but not same as java
 test_catch(A, B) ->
-	io:format("~p", [8/signed-little-integer]),
-	io:format("BYTE value is ~p", [?BYTE]),
+	% io:format("~p", [8/signed-little-integer]),
+	% io:format("BYTE value is ~p", [?BYTE]),
 	try dev(A, B) of
 		{ok, Val} ->
-			io:format("~p / ~p = ~p~n", [A, B, Val])
-		% {error, Res} ->
-		% 	io:format("error, the res is ~p~n", [Res])
+			io:format("~p / ~p = ~p~n", [A, B, Val]);
+		{error, Res} ->
+			io:format("error, the res is ~p~n", [Res])
 	catch
 		X:Y -> {X, Y}
 	end.
 
+% dev(_, 0) ->
+% 	{error, "by zero"};
 dev(A, B) ->
+	if
+		B == 0 ->
+			{error, "by zero"};
+		true ->
+			{ok, A / B}
+	end,
+	io:format("~p", ["func dev execute end"]),
 	{ok, A / B}.
-

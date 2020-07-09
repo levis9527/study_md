@@ -90,3 +90,5 @@ windows查看端口占用
 netstat -ano|findstr str  (a表示all，n表示用数字显示ip地址，o表示显示连接协议)
 windows查看pid对应的服务
 tasklist|findstr str
+
+scp 上传文件时，带上-r参数表示上传目录
