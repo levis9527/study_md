@@ -1,0 +1,19 @@
+<configuration>
+	<!-- 指定hdfs地址 -->
+	<property>
+		<name>fs.defaultFS</name>
+		<value>hdfs://XXXX:8020</value>
+	</property>
+
+	<!-- 未指定hadoop时临时存放目录 -->
+	<property>
+		<name>hadoop.tmp.dir</name>
+		<value>/data/hadoop/tmp</value>
+	</property>
+
+	<!-- 检查点备份日志的最长时间 -->
+	<property>
+		<name>fs.checkpoint.period</name>
+		<value>3600</value>
+	</property>
+</configuration>

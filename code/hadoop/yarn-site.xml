@@ -1,0 +1,26 @@
+<configuration>
+	<!-- 指定获取数据的方式的shuffle -->
+	<property>
+		<name>yarn.nodemanager.aux-services</name>
+		<value>mapreduce_shuffle</value>
+	</property>
+
+	<!-- 指定resource manage的地址 -->
+	<property>
+		<name>yarn.resourcemanage.hostname</name>
+		<value>master</value>
+	</property>
+
+	<!-- 指定shuffle处理器类 -->
+	<property>
+		<name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+		<value>org.apache.hadoop.mapred.ShuffleHandler</value>
+	</property>
+
+	<!-- 开启日志打印 -->
+	<property>
+		<name>yarn.log-aggregation-enable</name>
+		<value>true</value>
+	</property>
+
+</configuration>
