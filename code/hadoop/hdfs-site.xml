@@ -38,7 +38,7 @@
 	<!-- datanode的HTTP服务器和端口 -->
 	<property>
 		<name>dfs.datanode.http.address</name>
-		<value>0.0.0.0:50075</value>123
+		<value>0.0.0.0:50075</value>456
 	</property>
 
 </configuration>
