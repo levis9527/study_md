@@ -1,0 +1,15 @@
+\JetBrains 全家桶相关
+删除文件夹 %user%\.IntelliJIdea2017.2\config\eval， 也就是试用密钥的文件
+删除文件 %user%\.IntelliJIdea2017.2\config\options\options.xml，或者只删除文件里面的evlsprt开头的属性
+删除注册表 HKEY_CURRENT_USER\Software\JavaSoft\Prefs\jetbrains 下所有注册表项目
+
+navicat 相关
+删除注册表 HKEY_CURRENT_USER\Software\Classes\CLSID\ 目录下面多个注册表，需要认证核对哪些注册表是软件鉴权时读取的，不要删错
+
+sqlyog 相关
+删除注册表 HKEY_CURRENT_USER\Software\{d58cb4b1-47f3-45cb-a209-f298d0c3f756} 或者限制软件修改该注册表，可以一直显示试用30天
+
+UltraEdit 相关
+删除文件夹 C:\ProgramData\IDMComp\UltraEdit（具体版本可能有差别，就是密钥存放的位置）
+UE使用注册表和文件双重验证，所以还要删除注册表内含有密钥的注册表键，一般有多个键，里面含有密钥，键类似于EASFUI, YEEVLL, AGLIN等
+删除注册表 HKEY_USERS\S-1-5-21-1066882103-2419643953-3888884333-1001_Classes\WOW6432Node\CLSID\{9b4c79e8-d476-48e1-ad17-2253d0531ebb}
