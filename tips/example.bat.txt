@@ -1,0 +1,54 @@
+rem rem 列出所有java文件
+rem dir C:\D\code\extend\*.java /s /b > sources.txt
+
+rem rmdir /s /q build
+
+rem mkdir build
+
+rem xcopy C:\D\code\extend\WebRoot build /y /e
+
+
+
+rem rmdir /s /q build\WEB-INF\classes
+
+rem mkdir build\WEB-INF\classes
+
+rem xcopy C:\D\code\extend\resource build\WEB-INF\classes /y /e
+
+rem xcopy C:\D\code\extend\src  build\WEB-INF\classes /y /e
+
+
+rem javac -d build\WEB-INF\classes -cp build\WEB-INF\lib\*;C:\D\software\eclipse\plugins\org.junit_4.12.0.v201504281640\junit.jar -encoding UTF-8 @sources.txt
+
+rem jar -cvf  extend.war -C build .
+
+rem scp extend.war com2:
+
+rem ssh com2
+
+
+rem 如果存在build文件夹的话，删除build，防止数据污染
+rmdir /s /q build
+
+rem 创建classes文件夹
+mkdir build\WEB-INF\classes
+rem 拷贝源码
+xcopy C:\D\code\extend\src  build\WEB-INF\classes /y /e
+rem 拷贝资源文件
+xcopy C:\D\code\extend\resource build\WEB-INF\classes /y /e
+xcopy C:\D\code\extend\WebRoot build /y /e
+
+rem 列出所有java文件
+dir build\WEB-INF\classes\*.java /s /b > sources.txt
+
+rem 编译项目
+javac -d build\WEB-INF\classes -cp build\WEB-INF\lib\*;C:\D\software\eclipse\plugins\org.junit_4.12.0.v201504281640\junit.jar -encoding UTF-8 @sources.txt
+
+rem 打war包
+jar -cvf  extend.war -C build .
+
+rem scp上传war包
+scp extend.war com2:
+
+rem 远程连接上并执行命令
+ssh com2 "mv -fb *.war /volumes/jetty/webapps/ && docker-compose restart jetty-web&&exit"

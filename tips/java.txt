@@ -27,7 +27,7 @@ MBean有个规则，标准MBean名称必需是在要监控的类名后面加上�
 windows下手动编译整个项目
 dir /s /b *.java > sources.txt         把该目录下所有.java文件写入到文件sources.txt
 javac -d build @sources.txt            根据sources.txt里的文件名编译所有.java文件，
-javac -d build -cp lib @sources.txt    编译时也可以使用-classpath指定classpath路径
+javac -d build -cp lib\* @sources.txt    编译时也可以使用-classpath指定classpath路径
 java -classpath build com.A            运行要启动的类
 java -classpath "./cp1;./cp2"          window使用;分隔，linux使用:分隔
 jar -cvf jarName.jar build             把整个项目打包成jar

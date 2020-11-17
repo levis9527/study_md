@@ -489,7 +489,7 @@ export default {
 	methods: {
 		fetchData() { // 共用方法
 			this.loading = true
-			thia.error = this.post = null
+			this.error = this.post = null
 			// 获取数据，传入id和回调函数
 			getPost(this.$route.params.id, (err, post) => {
 				this.loading = false
