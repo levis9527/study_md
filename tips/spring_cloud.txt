@@ -7,3 +7,8 @@ Eureka Server：注册中心，里面有一个注册表，保存了各个服务�
 springboot中Actuator不显示更多信息
 需要关闭management.security.enabled = false，开发时使用，生产阶段必须设置权限保证安全
 info接口的信息展示可以直接在yml里添加类似json的参数，默认用@包裹参数
+
+
+spring中的FactoryBean<T>接口
+	可以自定义注入，实现getObject和getObjectType就可以注入spring的beanFactory，更加灵活
+	getObjectType 表示注入类型，getObject 表示注入的实体

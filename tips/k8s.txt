@@ -1,0 +1,83 @@
+k8s
+
+k8s概念
+
+node 
+	表示集群里面的机器，k8s必定是集群，minikube是为了测试方便才有的单机，一个node表示一个集群机器的资源，k8s并不创建node，只是管理存储再node上的资源，一般node启动的时候会通过kubelet主动向master注册
+	自己，创建node资源
+
+pod  
+	pod是k8s里面的最小单元，和docker的容器不同，pod可以包含多个容器来提供服务，分组编排更好的横向拓展，类似于把容器分组，内部耦合并和外部隔离
+	同一pod里面可以共享存储，共享网络等，
+	pod中的应用（容器）使用同样的网络命名空间端口以及虚拟卷，可以进行无障碍通信，可以把某个docker-compose文件定义的一组容器组放一个pod，方便互相访问
+	在生产环境中，推荐通过其他方式创建pod，直接创建如果出现异常导致pod被删除无法重建，比如deployment，statefulset，job，cronjob
+
+namespace
+	k8s支持多个虚拟集群，底层可以跑在一个集群上面，但是同过namespace来区分集群做到资源大的隔离，比如整个公司不同部门需要隔离的k8s可以运行在一个底层
+	集群上，但是通过namespace去区分隔离不同部门的资源
+
+ReplicationController
+	一种k8s资源（副本控制器），确保pod数量少于多少时自动创建pod替换上，保持pod的副本数和配置匹配，出现问题系统会删除pod重新创建pod并运行，新的pod没有原来的数据
+
+ReplicaSet
+	新的副本控制器，对比 ReplicationController 的不同是支持更多的选择器，推荐
+
+Deployment
+	Deployment部署，可以用来定义一组pod以及指定副本数量，状态等，还能操作容器版本回滚，一般使用Deployment定义一组pod（多个副本），然后使用services对外暴露服务，那样
+	service就不需要自己去创建pod而是关联Deployment，动态扩容，回滚
+	Deployment的回退： 使用kubectl set image或者其他方式升级pod或者运行时一直crash looping等的时候，Rollout会卡住，replicas会出现异常，pod可能处于ImagePullBackOff（拉取镜像失败）
+		状态，Deployment会自动停止坏的Rollout并停止扩容新的Replica Set，为了修复这个问题，我们只能手动回退到稳定的版本，处理完异常再重新更新
+	创建deployment的时候可以指定—recored参数记录每次操作详情，那么可以使用kubectl rollout history查看历史操作记录
+
+services
+	pod的生命周期是有限的，出现严重的异常会根据规则被kill删除然后新创建副本，会导致对外提供服务的话会存在严重的不稳定的情况，比如前端调用某pod的服务，某服务出现异常导致
+	被kill掉后永远连不上，所以需要在pod上增加一个中间层service整合pod访问入口来对外提供服务
+
+job
+	用来处理批处理任务的api对象，不需要长期运行，把设置的任务完成了就可以退出
+
+DaemonSet
+	后台支撑服务，DaemonSet关注所有的node而不是像其他的关注pod，比如所有节点都要加上日志监控，那么可以使用DaemonSet和nodeSelector给所选中的node加上相关的服务
+
+StatefulSet
+	有状态服务集，区别于RC和RS，RC和RS一般不挂载存储或者挂载共享存储，所有pod的状态全部是一样的，pod不存储任何数据，但是对于StatefulSet中的pod，每个pod又自己独立的存储系统，如果一个pod出现故障，
+	那么会从其他node启动一个同名的pod挂载原来pod上的数据存储他的状态继续提供服务而不是挂载其他共享存储
+
+Volume
+	Volume存储卷和docker类似，Volume存储卷的生命周期和作用范围是pod，pod内所有容器共享存储卷，pod出现故障被删除后存储卷消失，有不同的存储卷类型，可以使存储卷脱离后端的实际存储技术，可以让存储管理员
+	通过Persistent Volume来配置
+
+PV和PVC
+	PV和PVC使k8s集群具备了存储的逻辑抽象能力，PV和NODE是资源拥有者，PVC和POD是资源使用者，POD通过PVC声明使用PV，不一定要是本机上的文件，可以来源于网络，共享文件或者虚拟文件系统
+
+Secret
+	密钥对象，封装各种密钥敏感信息，避免直接把敏感信息写进配置文件，避免重复，减少暴露机会
+
+
+k8s组件
+
+etcd 保存整个集群的状态
+API Server 提供资源操作唯一入口，提供认证授权api注册发现等服务
+Controller Manager 负责维护集群状态，故障检测，自动扩展，滚动更新等
+Scheduler 负责资源调度，按照预定的策略将pod调度到相应的机器上
+Kubelet 负责维护容器的生命周期，也负责volume和网络的管理
+Container Runtime 负责镜像管理以及pod和容器的真正运行
+Kube-proxy 负责未service提供内部服务发现和负载均衡load balancer
+一般来讲，deploy-->replicaSet-->pod
+
+常用操作
+
+kubectl  port-forward service/nginx-app --address 0.0.0.0 10008:80 转发请求，本机的10008连接到service的80端口
+kubectl rollout undo deployment/nginx-app 回退到上一个版本
+
+
+k8s网络
+
+默认k8spod质检是互通的，可以采用限制手段来限制外部或者不同namespace质检访问彼此，比如不让开发环境namespace为dev的pod访问到生产环境pod，不同namespace质检通信可以用服务名加上namespace访问，比如nginx.dev
+
+
+
+
+
+
+
