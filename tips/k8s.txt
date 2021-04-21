@@ -63,20 +63,133 @@ Scheduler 负责资源调度，按照预定的策略将pod调度到相应的机�
 Kubelet 负责维护容器的生命周期，也负责volume和网络的管理
 Container Runtime 负责镜像管理以及pod和容器的真正运行
 Kube-proxy 负责未service提供内部服务发现和负载均衡load balancer
-一般来讲，deploy-->replicaSet-->pod
+一般来讲，deploy-->replicaSet-->pod，service通过Label Selector与后端的pod实现关联，但是不参与pod的管理，管理由deploy和rs等完成
 
 常用操作
 
 kubectl  port-forward service/nginx-app --address 0.0.0.0 10008:80 转发请求，本机的10008连接到service的80端口
+kubectl proxy --address='0.0.0.0'  --accept-hosts='^*$'
 kubectl rollout undo deployment/nginx-app 回退到上一个版本
 
 
 k8s网络
 
-默认k8spod质检是互通的，可以采用限制手段来限制外部或者不同namespace质检访问彼此，比如不让开发环境namespace为dev的pod访问到生产环境pod，不同namespace质检通信可以用服务名加上namespace访问，比如nginx.dev
+默认k8spod质检是互通的，可以采用限制手段来限制外部或者不同namespace质检访问彼此，比如不让开发环境namespace为dev的pod访问到生产环境pod，不同namespace质检通信可以用服务名加上namespace访问，比如nginx.dev，
+使用插件或者自己管理网络，需要保证接口的安全，尽量缩小pod的访问范围，同pod之间不会被影响，同pod质检只需要使用localhost就行，共享生命周期
 
 
 
+使用kubeadm搭建k8s服务简易步骤
+
+1. 准备机器（最少2台），网卡不能重复，处理器大于2个，机器已经安装好docker（必须安装）
+2. 机器关闭防火墙（生产环境应该打开端口而不是关闭防火墙），禁止swap，关闭slinux
+	systemctl stop firewalld && systemctl disable firewalld
+	sudo swapoff -a
+	setenforce 0
+	sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+
+3. 下载k8s相关组件并设置开机重启
+	cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+		[kubernetes]
+		name=Kubernetes
+		baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+		enabled=1
+		gpgcheck=1
+		repo_gpgcheck=1
+		gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+		EOF
+	yum install -y kubelet kubeadm kubectl
+	systemctl enable kubelet && systemctl start kubelet
+
+4. docker镜像拉取（因为墙的原因，kubeadm可能无法拉取镜像）
+	kubeadm config images list 查看需要的镜像列表
+	可以编写脚本也可以手动去dockerhub搜索相关的镜像拉取然后打标签，参考脚本如下
+	set -o errexit
+	set -o nounset
+	set -o pipefail
+	##这里定义版本
+	KUBE_VERSION=v1.18.5
+	KUBE_PAUSE_VERSION=3.2
+	ETCD_VERSION=3.4.3-0
+	DNS_VERSION=1.6.7
+
+	GCR_URL=k8s.gcr.io
+	##这里就是写你要使用的仓库
+	DOCKERHUB_URL=gotok8s
+	##这里是镜像列表
+	images=(
+	kube-proxy:${KUBE_VERSION}
+	kube-scheduler:${KUBE_VERSION}
+	kube-controller-manager:${KUBE_VERSION}
+	kube-apiserver:${KUBE_VERSION}
+	pause:${KUBE_PAUSE_VERSION}
+	etcd:${ETCD_VERSION}
+	coredns:${DNS_VERSION}
+	)
+	##这里是拉取和改名的循环语句
+	for imageName in ${images[@]} ; do
+	  docker pull $DOCKERHUB_URL/$imageName
+	  docker tag $DOCKERHUB_URL/$imageName $GCR_URL/$imageName
+	  docker rmi $DOCKERHUB_URL/$imageName
+	done
+
+5. master节点执行初始化（部分参数需要灵活设置，比如apiserver-advertise-address指定apiserver地址）
+	kubeadm init --apiserver-advertise-address 192.168.56.100
+	export KUBECONFIG=/etc/kubernetes/admin.conf
+	kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
+
+6. master配置网络
+	CNI bridge
+	mkdir -p /etc/cni/net.d
+		cat >/etc/cni/net.d/10-mynet.conf <<-EOF
+		{
+		    "cniVersion": "0.3.0",
+		    "name": "mynet",
+		    "type": "bridge",
+		    "bridge": "cni0",
+		    "isGateway": true,
+		    "ipMasq": true,
+		    "ipam": {
+		        "type": "host-local",
+		        "subnet": "10.244.0.0/16",
+		        "routes": [
+		            {"dst": "0.0.0.0/0"}
+		        ]
+		    }
+		}
+		EOF
+		cat >/etc/cni/net.d/99-loopback.conf <<-EOF
+		{
+		    "cniVersion": "0.3.0",
+		    "type": "loopback"
+		}
+		EOF
+	flannel
+		kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml
+	weave
+		sysctl net.bridge.bridge-nf-call-iptables=1
+		kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+	calico
+		kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+		kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+
+7. 节点加入master（节点也需要完成之前的配置工作）
+	master init初始化后，会生成一个命令类似kubeadm join --token <token> <master-ip>:<master-port> --discovery-token-ca-cert-hash sha256:<hash>
+	输入该命令就能加入master节点
+	如果生成的token过期，那么可以使用以下的命令重新生成token
+	kubeadm token create  生成token
+	openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //' 生成证书的sha256hash值
+
+8. 完成安装可以在master使用kubectl get node查看节点状态，如果节点存在而且状态为ready表示成功，如果有异常可以使用
+	 kubectl describe node k8s-node 查看node状态，不成功的具体原因
+
+9. 删除重新安装集群
+	# drain and delete the node first
+	kubectl drain <node name> --delete-local-data --force --ignore-daemonsets
+	kubectl delete node <node name>
+
+	# then reset kubeadm
+	kubeadm reset
 
 
 
