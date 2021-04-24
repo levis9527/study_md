@@ -1,5 +1,5 @@
 -module (tut).
--export ([double/1, fac/1, convert/1, test/1, list_length/1, sort/1, append/1, test_catch/2]).
+-export ([double/1, fac/1, convert/1, test/1, list_length/1, sort/1, append/1, test_catch/2, re/1]).
 
 % bit匹配，匹配一段二进制数据，一段一段的取，用<<>>包裹
 % 算是最简单的解析二进制数据的方法了，<<A:6, B:10>> = <<213, 12>>直接给AB赋值
@@ -48,10 +48,14 @@ sort([Head | T]) ->
 	[Head] ++
 	sort([X || X <- T, X >= Head]).
 
-
+% L格式未[[1,2,3], [4,5], [6,2]]，合并数组
 append(L)   ->  
 	[X || L1 <- L, X <- L1].
 
+re([]) ->
+	[];
+re([Head | T]) ->
+	re(T) ++ [Head].
 
 % the try catch userd, like java, but not same as java
 test_catch(A, B) ->

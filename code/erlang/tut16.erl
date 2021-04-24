@@ -23,5 +23,5 @@ pong() ->
 	end.
 
 start() ->
-	% register(pong, spawn(tut16, pong, [])).
-	spawn(tut16, ping, [3]).
+	register(pong, spawn(tut16, pong, [])).
+	% spawn(tut16, ping, [3]).

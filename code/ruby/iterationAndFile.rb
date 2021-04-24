@@ -20,3 +20,8 @@ puts "-------------ruby中的文件操作--------------"
 # val = gets
 # puts val
 putc "He" # putc只会输出第一个字符
+
+puts "\n"
+(1...3).each do |e| 
+	puts e 
+end
