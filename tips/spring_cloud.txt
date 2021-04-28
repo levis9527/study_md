@@ -12,3 +12,125 @@ info接口的信息展示可以直接在yml里添加类似json的参数，默认
 spring中的FactoryBean<T>接口
 	可以自定义注入，实现getObject和getObjectType就可以注入spring的beanFactory，更加灵活
 	getObjectType 表示注入类型，getObject 表示注入的实体
+
+
+org.springframework.web.filter.DelegatingFilterProxy filter
+可以把过滤器的生命周期交给spring容器管理，使用DelegatingFilterProxy代理过滤器
+@Bean
+public Filter TestFilter(){
+}
+<filter>
+    <filter-name>testFilter</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    <init-param>
+        <param-name>targetFilterLifecycle</param-name>
+        <param-value>true</param-value>
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>testFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+这样可以更加灵活的处理spring里面的filter
+
+
+springcloud
+    应用最好都取名，通过名称访问，优先使用spring.application.name
+eureka
+    作为注册中心，可以互相注册，可以使用zookeeper取代，负责微服务所有的服务，
+    其他提供或者需要调用的应用都要加上eureka.client.service-url.defaultZone并且加上@EnableEurekaClient注解
+    配置文件必须有属性eureka.instance.hostname，否则会出现共享数据异常
+feign
+    简化应用的相互调用，需要在启动类加上@EnableFeignClients注解来显示开启feign扫描包
+    简单使用是在接口上加@FeignClient(name = "service-name")注解，然后通过@RequestMapping("api-name")注解来调用远程service-name服务的api-name接口
+    可以再FeignCilent注解上配置fallback来指定调用失败后如何处理，一般实现Feign接口就行，并且加上依赖spring-cloud-starter-netflix-hystrix:2.2.6.RELEASE，版本必须指定
+    可能hystrix会存在版本不匹配导致无法启动或者启动后无效的情况，需要测试
+gateway
+    网关管理，可以通过设置spring.cloud.gateway.discovery.locator.enabled=true开启服务自动创建路由（服务名必须大写）
+    可以通过routes定义路由的处理，过滤，权限，转发等
+    routes属性包括id，uri，order，predicates等，id表示匹配规则唯一id，uri表示目标地址，predicates表示路由条件
+    一般使用简写，也可以使用详细格式，下面例子使用简写，详细格式如下
+        predicates:
+            - name: Cookie
+              args:
+                name: mycookie
+                regexp: mycookievalue
+    常见的条件有：
+        1. datetime 时间校验（根据时间来匹配转发规则）
+            1.1 After=2019-01-01T00:00:00+08:00[Asia/Shanghai] 时间之前的转发到uri
+            1.2 Before=2019-01-01T00:00:00+08:00[Asia/Shanghai] 时间之后的转发到uri
+            1.3 Between=2019-01-01T00:00:00+08:00[Asia/Shanghai], 2019-07-01T00:00:00+08:00[Asia/Shanghai] 时间区间的转发到uri，可以限制uri的有效期，做限时活动
+        2. cookie
+            2.1 Cookie=sessionId, test cookie有属性sessionId为test时（正则匹配），转发到uri
+        3. header
+            3.1 Header=X-Request-Id, \d+ 请求头的X-Request-Id为数字时，转发到uri
+        4. host
+            4.1 Host=**.baidu.com 如果host为www.baidu.com时，转发到uri
+        5. method
+            5.1 Method=GET,POST 请求方法为GET或者POST时转发到uri
+        6. path
+            6.1 Path=/foo/{segment} 请求path为foo/1时转发到uri
+                可以通过下面的方式拿到{}中的参数
+                Map<String, String> uriVariables = ServerWebExchangeUtils.getPathPredicateVariables(exchange);
+                String segment = uriVariables.get("segment");
+        7. queryParam
+            7.1 Query=smile 请求链接里包含smile参数的转发发哦uri，比如/foo/bar?smile=123
+            7.2 Query=keep, pu. 请求参数包含keep参数而且值为pu开头的3位字符串时转发到uri，比如/foo?keep=pub，pub.是正则，可以自定义匹配规则
+        8. remoteAddr
+            8.1 RemoteAddr=192.168.1.1/24 匹配请求ip地址位192.168.1.*的ip
+        9. Weight
+            9.1 Weight=group1, 8 表示同样的rote规则同一分组，根据权重匹配8表示权重，可以用来做灰度发布，负载均衡的转发
+        组合使用，如果组合多个条件，那么需要条件全部满足才能匹配，如果多个routes都能匹配上，请求会匹配最先匹配到的一个
+    内置filter规则工厂（为匹配到的route进行相关的处理，比如添加参数，添加header等等），语法表示为和predicates同级别，也是接收一个数组，可以惊醒多个处理
+        1. AddRequestHeader 
+            1.1 AddRequestHeader=X-Request-red, blue表示添加一个requestHeader X-Request-red=blue
+            1.2 AddRequestHeader=X-Request-Red, Blue-{segment} 添加Header，并且可以使用path匹配里面的参数
+        2. AddRequestParameter
+            2.1 AddRequestParameter=red, blue 添加一个request请求参数，?red=blue
+            2.2 Host: {segment}.myhost.org  AddRequestParameter=foo, bar-{segment} 添加host匹配参数，?foo=bar-segment
+        3. AddResponseHeader 
+            3.1 AddResponseHeader=X-Response-Red, Blue 添加一个响应参数 X-Response-Red=Blue
+            3.2 同样可以使用{}匹配到的参数来进行处理
+        4. DedupeResponseHeader
+            4.1 响应里卖弄有重复的值可以使用这个filter删除重复的值，多个响应头属性用空格分开，可以加一个逗号指定去重合并规则，RETAIN_FIRST保留第一个，RETAIN_LAST保留最后，RETAIN_UNIQUE保留唯一去重
+        5. CircuitBreaker 
+            5.1 断路处理程序，如果匹配到的route发生异常，那么会调用短路处理程序惊醒处理，可以指定fallbackUri: forward:/fallbackUrl在发生错误后转发到哪个url
+            5.2 forward可以和其他的route相互配合，指定一个route规则专门处理fallback请求
+            5.3 forward转发时可以携带上statusCode，和name，fallback同级别有个参数sattusCode，接收数组http状态码或者状态字符串
+        6. FallbackHeaders
+            6.1 可以设置FallbackHeaders的args的executionExceptionTypeHeaderName值来设置responseHead错误的类型的值，比如本来时NullExp，可以改成undefinedExp
+            6.2 同理还有executionExceptionMessageHeaderName，设置错误消息主题详细内容
+        
+
+
+config
+    必须注意spring-cloud-config-server和spring-cloud-starte-config的区别，否则弄错了无法注入相关属性，新版本需要导入spring-cloud-starter-bootstrap
+    简单的导入只需要设置appname，profile，label就行，然后注册到eureka，通过discovery的service-id确定config服务地址
+    可以使用@value注入值，但是注入之后不能修改，无法更新，所以推荐使用@ConfigurationProperties来注入，建议提前设置默认值，在连接不上服务的时候使用默认值
+    如果需要更新配置的值，按照步骤:
+        1. 加入spring-boot-starter-actuator依赖，并打开配置management.endpoints.web.exposure.include: refresh,health,info
+        2. 使用@ConfigurationProperties取代Value注入配置值
+        3. 在包含需要刷新的对象的类上面加上@RefreshScope注解
+        4. 修改git配置文件
+        5. 调用POST /actuator/refresh 接口刷新配置
+    实际使用中，可以把项目的配置文件放再git，项目原生的配置文件只放如何找寻配置文件的路径，就是config-client以及eureka-client，通过这2个client去找配置并覆盖本地配置文件的内容
+    一般配置文件格式为 appname-profile.yml 可以通过多种连接访问，实际使用指定appname，profile，以及label（master/dev分支），让服务自己去server拉取配置文件
+spring-bus
+    消息总线，多个微服务都依赖的配置文件刷新时，不可能全部都去执行refresh操作，git的hook也不可能全部调用，所以出现消息总线，通过消息队列让所有应用订阅相关的消息，只用刷新一个微服务，
+    所有依赖的微服务都会刷新配置，方便操作
+    步骤：
+        1. 加入spring-cloud-starter-bus-amqp，并添加kafka或者rabbitmq的连接配置
+        2. 打开配置management.endpoints.web.exposure.include: refresh,health,info,busrefresh
+        3. 调用POST //actuator/busrefresh 接口，可以实现依赖这个配置文件的项目全部刷新
+zipkin
+    链路追踪，可以监控微服务之间的依赖关系，具体是搭建一个zipkin服务server，需要追踪的微服务添加依赖，配置服务地址就可以自动追踪调用关系
+    添加依赖spring-cloud-sleuth-zipkin和spring-cloud-starter-sleuth，配置相关参数即可实现追踪
+    必须要的配置spring.zipkin.base-url(zipkin服务地址)，spring.sleuth.sampler.probability(样本比例，1.0表示全部追踪，全部追踪会影响性能，开发可以使用，生产配置合适的比例就行)
+function
+    函数即服务，生成无状态的函数接口给其他应用调用，彻底微服务化，比如所有通用方法可以不打包共享而是发布成服务隐藏实现细节来提供服务
+    添加依赖spring-cloud-function-context和spring-cloud-starter-function-web，然后定义Supplier或者Function等Bean注入容器，会自动生成/beanname的接口给外界调用
+    可以添加spring.cloud.function.definition=foo|bar，这样会进行管道处理执行foo然后执行bar，路由为/，如果有很多需要管道处理的业务，可以调用/bname1,bname2来进行管道处理
+
+
+
+
