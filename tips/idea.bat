@@ -5,7 +5,7 @@ rem 备份文件
 copy /y !ideaPath!\options\other.xml !ideaPath!\options\other.xml.bak
 
 rem 删除other文件xml内容
-echo. > !ideaPath!\options\other.xml.tmp
+cd.  > !ideaPath!\options\other.xml.tmp
 for /f "delims=" %%i in (!ideaPath!\options\other.xml) do (
 	set "str=%%i"
 	for /f "delims=" %%t in ("!str!") do (
@@ -17,7 +17,9 @@ for /f "delims=" %%i in (!ideaPath!\options\other.xml) do (
 			rem echo "%%t:sdf%%"
 			rem echo "%%t%%"
 			echo "delete line ==>!str!"
-		) else echo !str! >> !ideaPath!\options\other.xml.tmp
+		) else (
+			echo !str! >> !ideaPath!\options\other.xml.tmp
+		)
 	)
 )
 rem 把筛选过的文件重新覆盖配置
