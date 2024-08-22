@@ -12,3 +12,257 @@ info接口的信息展示可以直接在yml里添加类似json的参数，默认
 spring中的FactoryBean<T>接口
 	可以自定义注入，实现getObject和getObjectType就可以注入spring的beanFactory，更加灵活
 	getObjectType 表示注入类型，getObject 表示注入的实体
+
+
+org.springframework.web.filter.DelegatingFilterProxy filter
+可以把过滤器的生命周期交给spring容器管理，使用DelegatingFilterProxy代理过滤器
+@Bean
+public Filter TestFilter(){
+}
+<filter>
+    <filter-name>testFilter</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    <init-param>
+        <param-name>targetFilterLifecycle</param-name>
+        <param-value>true</param-value>
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>testFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+这样可以更加灵活的处理spring里面的filter
+
+
+springcloud
+    应用最好都取名，通过名称访问，优先使用spring.application.name
+eureka
+    作为注册中心，可以互相注册，可以使用zookeeper取代，负责微服务所有的服务，
+    其他提供或者需要调用的应用都要加上eureka.client.service-url.defaultZone并且加上@EnableEurekaClient注解
+    配置文件必须有属性eureka.instance.hostname，否则会出现共享数据异常
+feign
+    简化应用的相互调用，需要在启动类加上@EnableFeignClients注解来显示开启feign扫描包
+    简单使用是在接口上加@FeignClient(name = "service-name")注解，然后通过@RequestMapping("api-name")注解来调用远程service-name服务的api-name接口
+    可以再FeignCilent注解上配置fallback来指定调用失败后如何处理，一般实现Feign接口就行，并且加上依赖spring-cloud-starter-netflix-hystrix:2.2.6.RELEASE，版本必须指定
+    可能hystrix会存在版本不匹配导致无法启动或者启动后无效的情况，需要测试
+gateway
+    网关管理，可以通过设置spring.cloud.gateway.discovery.locator.enabled=true开启服务自动创建路由（服务名必须大写）
+    可以通过routes定义路由的处理，过滤，权限，转发等
+    routes属性包括id，uri，order，predicates等，id表示匹配规则唯一id，uri表示目标地址，predicates表示路由条件
+    一般使用简写，也可以使用详细格式，下面例子使用简写，详细格式如下
+        predicates:
+            - name: Cookie
+              args:
+                name: mycookie
+                regexp: mycookievalue
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+    常见的条件有：
+        1. datetime 时间校验（根据时间来匹配转发规则）
+            1.1 After=2019-01-01T00:00:00+08:00[Asia/Shanghai] 时间之前的转发到uri
+            1.2 Before=2019-01-01T00:00:00+08:00[Asia/Shanghai] 时间之后的转发到uri
+            1.3 Between=2019-01-01T00:00:00+08:00[Asia/Shanghai], 2019-07-01T00:00:00+08:00[Asia/Shanghai] 时间区间的转发到uri，可以限制uri的有效期，做限时活动
+        2. cookie
+            2.1 Cookie=sessionId, test cookie有属性sessionId为test时（正则匹配），转发到uri
+        3. header
+            3.1 Header=X-Request-Id, \d+ 请求头的X-Request-Id为数字时，转发到uri
+        4. host
+            4.1 Host=**.baidu.com 如果host为www.baidu.com时，转发到uri
+        5. method
+            5.1 Method=GET,POST 请求方法为GET或者POST时转发到uri
+        6. path
+            6.1 Path=/foo/{segment} 请求path为foo/1时转发到uri
+                可以通过下面的方式拿到{}中的参数
+                Map<String, String> uriVariables = ServerWebExchangeUtils.getPathPredicateVariables(exchange);
+                String segment = uriVariables.get("segment");
+        7. queryParam
+            7.1 Query=smile 请求链接里包含smile参数的转发发哦uri，比如/foo/bar?smile=123
+            7.2 Query=keep, pu. 请求参数包含keep参数而且值为pu开头的3位字符串时转发到uri，比如/foo?keep=pub，pub.是正则，可以自定义匹配规则
+        8. remoteAddr
+            8.1 RemoteAddr=192.168.1.1/24 匹配请求ip地址位192.168.1.*的ip
+        9. Weight
+            9.1 Weight=group1, 8 表示同样的rote规则同一分组，根据权重匹配8表示权重，可以用来做灰度发布，负载均衡的转发
+        组合使用，如果组合多个条件，那么需要条件全部满足才能匹配，如果多个routes都能匹配上，请求会匹配最先匹配到的一个
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+    内置filter规则工厂（为匹配到的route进行相关的处理，比如添加参数，添加header等等），语法表示为和predicates同级别，也是接收一个数组，可以惊醒多个处理
+        1. AddRequestHeader 
+            1.1 AddRequestHeader=X-Request-red, blue表示添加一个requestHeader X-Request-red=blue
+            1.2 AddRequestHeader=X-Request-Red, Blue-{segment} 添加Header，并且可以使用path匹配里面的参数
+        2. AddRequestParameter
+            2.1 AddRequestParameter=red, blue 添加一个request请求参数，?red=blue
+            2.2 Host: {segment}.myhost.org  AddRequestParameter=foo, bar-{segment} 添加host匹配参数，?foo=bar-segment
+        3. AddResponseHeader 
+            3.1 AddResponseHeader=X-Response-Red, Blue 添加一个响应参数 X-Response-Red=Blue
+            3.2 同样可以使用{}匹配到的参数来进行处理
+        4. DedupeResponseHeader
+            4.1 响应里卖弄有重复的值可以使用这个filter删除重复的值，多个响应头属性用空格分开，可以加一个逗号指定去重合并规则，RETAIN_FIRST保留第一个，RETAIN_LAST保留最后，RETAIN_UNIQUE保留唯一去重
+        5. CircuitBreaker 
+            5.1 断路处理程序，如果匹配到的route发生异常，那么会调用短路处理程序惊醒处理，可以指定fallbackUri: forward:/fallbackUrl在发生错误后转发到哪个url
+            5.2 forward可以和其他的route相互配合，指定一个route规则专门处理fallback请求
+            5.3 forward转发时可以携带上statusCode，和name，fallback同级别有个参数sattusCode，接收数组http状态码或者状态字符串
+        6. FallbackHeaders
+            6.1 可以设置FallbackHeaders的args的executionExceptionTypeHeaderName值来设置responseHead错误的类型的值，比如本来时NullExp，可以改成undefinedExp
+            6.2 同理还有executionExceptionMessageHeaderName，设置错误消息主题详细内容
+        7. MapRequestHeader
+            7.1 MapRequestHeader=Blue, X-Request-Red 把请求头的Blue对应的值拷贝一份给X-Request-Red请求头
+        8. PrefixPath
+            8.1 PrefixPath=/mypath 在匹配到的请求路径上加上一个前缀，比如/foo匹配到规则的话，会转发给/mypath/foo
+        9. PreserveHostHeader
+            9.1 PreserveHostHeader 保留host请求头，防止多次转发后host丢失
+        10. RequestRateLimiter 请求限流过滤器
+            10.1 spring.cloud.gateway.routes[0].filters[0]=RequestRateLimiter=2, 2, #{@userkeyresolver} 限流具体配置规则要仔细查看说明
+            10.2 redis限流，可以在filter添加args （需要配置用什么键来识别同一用户）
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+            10.3 key-resolver 配置key解析器，怎么区分请求时同一用户的
+        11. RedirectTo
+            11.1 RedirectTo=302, https://acme.org 发送302请求头并重定向到https://acme.org
+        12. RemoveRequestHeader
+            12.1 RemoveRequestHeader=X-Request-Foo 删除请求头中的X-Request-Foo属性
+        13. RemoveResponseHeader
+            13.1 RemoveResponseHeader=X-Response-Foo 删除响应头中的X-Response-Foo属性
+        14. RemoveRequestParameter
+            14.1 RemoveRequestParameter=red 删除请求中的red参数，url中的参数
+        15. RewritePath
+            15.1 RewritePath=/red/?(?<segment>.*), /$\{segment} 重写url，正则替换
+        16. RewriteLocationResponseHeader
+            16.1 RewriteLocationResponseHeader=AS_IN_REQUEST, Location, , 根据规则重写响应里面Location的值
+        17. RewriteResponseHeader
+            17.1 RewriteResponseHeader=X-Response-Red, , password=[^&]+, password=*** 修改请求头的属性，可以多个值并列，X-Response-Red修改为空，password=omg!wh改为password=**
+        18. SaveSession
+            18.1 保存session信息，避免转发到其他服务上session丢失
+        19. SecureHeaders 
+            19.1 管理项目安全方面的请求头，包括xss，csrf等，结合其他框架使用
+            19.2 secure-headers.disable=x-frame-options,strict-transport-security 禁用某些头部信息
+        20. SetPath
+            20.1 修改path的值， SetPath=/{segment} 把匹配的path里面segment的值提取出来组合成新的path
+        21. SetRequestHeader 修改requestHeader的值
+            21.1 SetRequestHeader=X-Request-Red, Blue 把requestHeader属性X-Request-Red的值修改为Blue
+            21.2 SetRequestHeader=foo, bar-{segment} 同样的，可以使用predicates匹配到的参数
+        22. SetResponseHeader 修改返回的响应头
+            22.1 SetResponseHeader=X-Response-Red, Blue 把响应里卖弄X-Response-Red的值修改为Blue
+            22.2 SetResponseHeader=foo, bar-{segment} 也是可以使用predicates里面匹配到的数据的
+        23. SetStatus
+            23.1 可以修改响应的http状态，比如某些匹配到的请求，统一返回404状态
+        24. StripPrefix
+            24.1 去掉指定前缀，StripPrefix=2 表示去掉url前面2个前缀，如/foo/bar/zzr 会转发到url/zzr，对于需要去掉固定数量前缀的场景适用
+        25. Retry 重试filter，处理重试逻辑（大致配置如下）
+            - name: Retry
+              args:
+                retries: 3 重试次数
+                statuses: BAD_GATEWAY 出现那种情况重试，这里是502
+                methods: GET,POST 那种请求会被重试，这里指GET 或者POST
+                backoff: 重试执行规则
+                  firstBackoff: 10ms 开始重试时间
+                  maxBackoff: 50ms 最大重试时间
+                  factor: 2 重试因子
+                  basedOnPreviousValue: false 当设置为false时候 计算重试值变成： firstBackoff * (factor ^ n)，当设置为true时候 计算重试值变成： prevBackoff * factor
+        26. RequestSize
+            26.1 最大request限制过滤器，如果request超过数量会给出错误提示，args.maxSize=5000000，请求超过5M会返回错误
+                errorMessage` : `Request size is larger than permissible limit. Request size is 6.0 MB where permissible limit is 5.0 MB
+        27. SetRequestHostHeader 设置请求头HOST
+            27.1 args.host=example.org 设置host为 example.org
+        28. ModifyRequestBody （因为涉及要修改requestBody，所以不能简单通过yml去配置，可以自行配置java代码实现）
+            java代码如下，注入RouteLocator 即可：
+            @Bean
+            public RouteLocator routes(RouteLocatorBuilder builder) {
+                return builder.routes()
+                    .route("rewrite_request_obj", r -> r.host("*.rewriterequestobj.org")
+                        .filters(f -> f.prefixPath("/httpbin")
+                            .modifyRequestBody(String.class, Hello.class, MediaType.APPLICATION_JSON_VALUE,
+                                (exchange, s) -> return Mono.just(new Hello(s.toUpperCase())))).uri(uri))
+                    .build();
+            }
+        29. ModifyResponseBody （修改响应返回数据，同上面的逻辑，代码如下）：
+            @Bean
+            public RouteLocator routes(RouteLocatorBuilder builder) {
+                return builder.routes()
+                    .route("rewrite_response_upper", r -> r.host("*.rewriteresponseupper.org")
+                        .filters(f -> f.prefixPath("/httpbin")
+                            .modifyResponseBody(String.class, String.class,
+                                (exchange, s) -> Mono.just(s.toUpperCase()))).uri(uri))
+                    .build();
+            }
+        30. TokenRelay 令牌传递filter
+            30.1 - TokenRelay= 表示将token传递给下游的处理器，具体设计token生成需要参考spring-oauth2
+        31. default-filters 默认filter处理器，spring.cloud.gateway.default-filter，对所有请求做通用处理
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    global-filter 全局filter，处理全局filter，可以配置spring.cloud.gateway.global-filter下面多个属性配置基本配置信息，各种信息的开启关闭
+    如果需要配置全局filter逻辑处理，可以实现 GlobalFilter, Ordered 接口并注入到springbean工厂
+    @Bean
+    public GlobalFilter customFilter() {
+        return new CustomGlobalFilter();
+    }
+
+    public class CustomGlobalFilter implements GlobalFilter, Ordered {
+        @Override
+        public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+            log.info("custom global filter");
+            return chain.filter(exchange);
+        }
+        @Override
+        public int getOrder() {
+            return -1;
+        }
+    }
+    内置一些默认的全局filter提供给用户调用，比如：
+        1. ForwardRoutingFilter 转发过滤器 使用forward://uri调用
+        2. 各种LoadBalancerClientFilter 负载均衡过滤器，把请求转发到不同的uri上面 使用lb://uri调用
+        3. WebsocketRoutingFilter ws过滤器，把请求转发到websocket 使用ws://uri调用
+        4. GatewayMetricsFilter 仪表盘过滤器，添加此过滤器会显示一个仪表盘来显示项目详情，需要添加依赖micrometer-registry-prometheus，并且设置spring.cloud.gateway.metrics.enabled为true
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    tsl 和 ssl
+    先配置server.ssl里面的各项配置，然后在spring.cloud.gateway.httpclient.ssl里面详细配置证书，详情见详细文档
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    RouteMetadataConfiguration 每个route可以包含一个metadata用于向程序处理传递metadata参数，获取参数的方法如下：
+        Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
+        route.getMetadata();
+    httpclient 配置
+        可以针对httpclient配置超时等配置信息，详细配置根据业务场景需要自由配置
+    CORSConfiguration 配置cors是否允许的信息，全局配置，位于spring.cloud.gateway.globalcors.cors-configurations，参考配置信息如下：
+        gateway:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "https://docs.spring.io"
+                allowedMethods:
+                - GET
+config
+    必须注意spring-cloud-config-server和spring-cloud-starte-config的区别，否则弄错了无法注入相关属性，新版本需要导入spring-cloud-starter-bootstrap
+    简单的导入只需要设置appname，profile，label就行，然后注册到eureka，通过discovery的service-id确定config服务地址
+    可以使用@value注入值，但是注入之后不能修改，无法更新，所以推荐使用@ConfigurationProperties来注入，建议提前设置默认值，在连接不上服务的时候使用默认值
+    如果需要更新配置的值，按照步骤:
+        1. 加入spring-boot-starter-actuator依赖，并打开配置management.endpoints.web.exposure.include: refresh,health,info
+        2. 使用@ConfigurationProperties取代Value注入配置值
+        3. 在包含需要刷新的对象的类上面加上@RefreshScope注解
+        4. 修改git配置文件
+        5. 调用POST /actuator/refresh 接口刷新配置
+    实际使用中，可以把项目的配置文件放再git，项目原生的配置文件只放如何找寻配置文件的路径，就是config-client以及eureka-client，通过这2个client去找配置并覆盖本地配置文件的内容
+    一般配置文件格式为 appname-profile.yml 可以通过多种连接访问，实际使用指定appname，profile，以及label（master/dev分支），让服务自己去server拉取配置文件
+spring-bus
+    消息总线，多个微服务都依赖的配置文件刷新时，不可能全部都去执行refresh操作，git的hook也不可能全部调用，所以出现消息总线，通过消息队列让所有应用订阅相关的消息，只用刷新一个微服务，
+    所有依赖的微服务都会刷新配置，方便操作
+    步骤：
+        1. 加入spring-cloud-starter-bus-amqp，并添加kafka或者rabbitmq的连接配置
+        2. 打开配置management.endpoints.web.exposure.include: refresh,health,info,busrefresh
+        3. 调用POST //actuator/busrefresh 接口，可以实现依赖这个配置文件的项目全部刷新
+zipkin
+    链路追踪，可以监控微服务之间的依赖关系，具体是搭建一个zipkin服务server，需要追踪的微服务添加依赖，配置服务地址就可以自动追踪调用关系
+    添加依赖spring-cloud-sleuth-zipkin和spring-cloud-starter-sleuth，配置相关参数即可实现追踪
+    必须要的配置spring.zipkin.base-url(zipkin服务地址)，spring.sleuth.sampler.probability(样本比例，1.0表示全部追踪，全部追踪会影响性能，开发可以使用，生产配置合适的比例就行)
+function
+    函数即服务，生成无状态的函数接口给其他应用调用，彻底微服务化，比如所有通用方法可以不打包共享而是发布成服务隐藏实现细节来提供服务
+    添加依赖spring-cloud-function-context和spring-cloud-starter-function-web，然后定义Supplier或者Function等Bean注入容器，会自动生成/beanname的接口给外界调用
+    可以添加spring.cloud.function.definition=foo|bar，这样会进行管道处理执行foo然后执行bar，路由为/，如果有很多需要管道处理的业务，可以调用/bname1,bname2来进行管道处理
+cloud-stream
+    如果只对一个消息进行处理，可以配合使用spring function的方法，定义一个Supplier, Function 或者 Consumer，比如Consumer会订阅一个消息，等待消息惊醒处理，function会生成2个queue，一个进一个出，
+    用户往in里面发送数据，Function会惊醒处理之后发回给out，Supplier类似于生产者，不断创造数据。 总结就是Supplier生产数据，Consumer消费数据，Function处理数据（接收和消费），对于Supplier，默认每秒
+    往消息队列里写入一条数据，注意处理，可以使用生成器等操作，注意，如果有多个函数，为了避免冲突，需要使用spring.cloud.function.definition=a;b;c来处理冲突
+    对于rabbitmq，可以配置死信队列，出现异常的进入死信队列，不用自己处理逻辑 spring.cloud.stream.rabbit.bindings.uppercase-in-0.consumer.auto-bind-dlq=true
+    StreamBridge:
+        可以使用StreamBridge对象的send方法自定义发送消息
+    大部分情况下，只存在发送逻辑需要动态处理，接收消息的消费者只需要定义一个处理逻辑固定消费就行了
+
+
+
+
